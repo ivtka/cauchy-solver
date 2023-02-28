@@ -66,3 +66,76 @@ where
 
     optimal_h
 }
+
+pub struct Scheme(pub Vec<f64>, pub Vec<f64>);
+
+pub fn newton(scheme: &mut Scheme, h: f64, eps: f64) {
+    let mut t = h * 3.0;
+    let (mut x_s, mut y_s) = (scheme.0[2], scheme.1[2]);
+
+    let mut matrix = [[0.0; 2]; 2];
+    let mut matrix_inv = [[0.0; 2]; 2];
+
+    let mut i = 4;
+
+    let (mut x_next, mut y_next);
+
+    while t < 1.0 {
+        println!("t < 1.0 == {}, {t}", t < 1.0);
+        loop {
+            let a = 1.0 - 4.0 / 3.0 * h;
+            let b = -(2.0 / 3.0) * h;
+            let c = -(2.0 / 3.0) * h;
+            let d = 1.0 + 2.0 / 3.0 * h;
+
+            matrix[0][0] = a;
+            matrix[0][1] = b;
+            matrix[1][0] = c;
+            matrix[1][1] = d;
+
+            let det = find_determinator(&matrix);
+
+            matrix_inv[0][0] = matrix[1][1] * (1.0 / det);
+            matrix_inv[1][1] = matrix[0][0] * (1.0 / det);
+            matrix_inv[0][1] = -1.0 * matrix[0][1] * (1.0 / det);
+            matrix_inv[1][0] = -1.0 * matrix[1][0] * (1.0 / det);
+
+            let f_x = x_s - 48.0 / 25.0 * scheme.0[i - 4] - 36.0 / 25.0 * scheme.0[i - 3]
+                + 16.0 / 25.0 * scheme.0[i - 2]
+                - 3.0 / 25.0 * scheme.0[i - 1]
+                + 12.0 / 25.0 * h * dx(t, x_s, y_s);
+            let f_y = y_s - 48.0 / 25.0 * scheme.1[i - 4] - 36.0 / 25.0 * scheme.1[i - 3]
+                + 16.0 / 25.0 * scheme.1[i - 2]
+                - 3.0 / 25.0 * scheme.1[i - 1]
+                + 12.0 / 25.0 * h * dy(t, x_s, y_s);
+
+            x_next = x_s - (matrix_inv[0][0]) * f_x + matrix_inv[0][1] * f_y;
+            y_next = x_s - (matrix_inv[1][0]) * f_x + matrix_inv[0][1] * f_y;
+
+            if (x_next - x_s).abs() + (y_next - y_s).abs() > eps {
+                break;
+            } else {
+                (x_s, y_s) = (x_next, y_next);
+            }
+        }
+
+        (scheme.0[i + 1], scheme.1[i + 1]) = (x_next, y_next);
+
+        (x_s, y_s) = (x_next, y_next);
+
+        t += h;
+        i += 1;
+    }
+}
+
+fn find_determinator(matrix: &[[f64; 2]; 2]) -> f64 {
+    matrix[0][0] * matrix[1][1] - matrix[1][0] * matrix[0][1]
+}
+
+pub fn dx(t: f64, x: f64, y: f64) -> f64 {
+    2.0 * x - y * t.powi(2) - 2.0 * (t.sin() + 1.0) * t.cos()
+}
+
+pub fn dy(t: f64, x: f64, y: f64) -> f64 {
+    x + 2.0 * y - t.sin() - 2.0 * t.powi(2) + 2.0 * t - 1.0
+}
