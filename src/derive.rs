@@ -94,9 +94,9 @@ impl Scheme {
         scheme
     }
 
-    pub fn newton<F>(&mut self, h: f64, eps: f64, f: F)
+    pub fn newton<F>(&mut self, h: f64, eps: f64, f: F, level: usize)
     where
-        F: Fn(&Vec<f64>, usize, f64, f64, f64, f64) -> f64,
+        F: Fn(&Vec<f64>, usize, f64, f64, f64, f64, DeriveFn) -> f64,
     {
         let mut t = h * 3.0;
         let (mut x_s, mut y_s) = (self.0[2], self.1[2]);
@@ -104,7 +104,7 @@ impl Scheme {
         let mut matrix = [[0.0; 2]; 2];
         let mut matrix_inv = [[0.0; 2]; 2];
 
-        let mut i = 4;
+        let mut i = level;
 
         let (mut x_next, mut y_next);
 
@@ -130,13 +130,13 @@ impl Scheme {
                 matrix_inv[0][1] = -1.0 * matrix[0][1] * (1.0 / det);
                 matrix_inv[1][0] = -1.0 * matrix[1][0] * (1.0 / det);
 
-                let f_x = x_s - f(&self.0, i, h, t, x_s, y_s);
-                let f_y = x_s - f(&self.1, i, h, t, x_s, y_s);
+                let f_x = x_s - f(&self.0, i, h, t, x_s, y_s, DeriveFn::Dx);
+                let f_y = y_s - f(&self.1, i, h, t, x_s, y_s, DeriveFn::Dy);
 
                 x_next = x_s - (matrix_inv[0][0]) * f_x + matrix_inv[0][1] * f_y;
-                y_next = x_s - (matrix_inv[1][0]) * f_x + matrix_inv[0][1] * f_y;
+                y_next = y_s - (matrix_inv[1][0]) * f_x + matrix_inv[0][1] * f_y;
 
-                if (x_next - x_s).abs() + (y_next - y_s).abs() < eps {
+                if (x_next - x_s).abs() + (y_next - y_s).abs() > eps {
                     break;
                 } else {
                     (x_s, y_s) = (x_next, y_next);
@@ -152,5 +152,41 @@ impl Scheme {
         }
     }
 
-    pub fn iterate(&mut self, h: f64, eps: f64) {}
+    pub fn iterate<F>(&mut self, h: f64, eps: f64, f: F, level: usize)
+    where
+        F: Fn(&Vec<f64>, usize, f64, f64, f64, f64, DeriveFn) -> f64,
+    {
+        let mut t = h * 3.0;
+
+        let (mut x_s, mut y_s) = (self.0[1], self.1[1]);
+
+        let mut i = level;
+
+        let (mut x_next, mut y_next);
+
+        while (t - 1.0).abs() > eps {
+            loop {
+                x_next = f(&self.0, i, h, t, x_s, y_s, DeriveFn::Dx);
+                y_next = f(&self.1, i, h, t, x_s, y_s, DeriveFn::Dy);
+
+                if (x_next - x_s).abs() + (y_next - y_s).abs() > eps {
+                    break;
+                } else {
+                    (x_s, y_s) = (x_next, y_next);
+                }
+            }
+
+            (self.0[i + 1], self.1[i + 1]) = (x_next, y_next);
+
+            (x_s, y_s) = (x_next, y_next);
+
+            t += h;
+            i += 1;
+        }
+    }
+}
+
+pub enum DeriveFn {
+    Dx,
+    Dy,
 }
