@@ -1,6 +1,7 @@
 mod derive;
 
-use derive::*;
+use derive::find_optimal_h;
+use derive::Scheme;
 
 fn main() {
     let eps = 1e-2;
@@ -36,10 +37,8 @@ fn main() {
 
     let num = (1.0 / optimal_h + 1.0) as usize;
 
-    let mut scheme = Scheme(vec![0.0; num], vec![0.0; num]);
-
-    fill_scheme(&mut scheme, x0, y0, optimal_h, yrk21);
-    newton(&mut scheme, optimal_h, eps, ng4);
+    let mut scheme = Scheme::new(x0, y0, optimal_h, yrk21, 3, num);
+    scheme.newton(optimal_h, eps, ng4);
 
     let mut i = 0;
 
@@ -50,24 +49,5 @@ fn main() {
 
         t0 += optimal_h;
         i += 1;
-    }
-}
-
-fn fill_scheme<F>(scheme: &mut Scheme, x0: f64, y0: f64, h: f64, f: F)
-where
-    F: Fn(f64, f64, f64, f64) -> (f64, f64),
-{
-    let mut t = 0.0;
-
-    let (mut x0, mut y0) = (x0, y0);
-
-    (scheme.0[0], scheme.1[0]) = (x0, y0);
-
-    for i in 1..3 {
-        let (x_next, y_next) = f(h, x0, y0, t);
-
-        t += h;
-        (scheme.0[i], scheme.1[i]) = (x_next, y_next);
-        (x0, y0) = (x_next, y_next);
     }
 }
