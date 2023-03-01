@@ -1,38 +1,9 @@
-/// Find Optimal `H` using RK4 algorithm.
-///
-/// # Arguments
-///
-/// * `f` - One step difference scheme
-///
-/// # Examples
-///
-/// ```
-/// let optimal_h = find_optimal_h(
-///     x0,
-///     y0,
-///     Some(t0),
-///     Some(h0),
-///     Some(eps),
-///     |h0: f64, x0: f64, y0: f64, t0: f64| {
-///         let dx =
-///             |t: f64, x: f64, y: f64| 2.0 * x - y * t.powi(2) - 2.0 * (t.sin() + 1.0) * t.cos();
-///
-///         let dy =
-///             |t: f64, x: f64, y: f64| x + 2.0 * y - t.sin() - 2.0 * t.powi(2) + 2.0 * t - 1.0;
-///
-///         let k1 = dx(t0, x0, y0);
-///         let k2 = dx(t0 + h0, x0 + h0 * k1, y0);
-///
-///         let l1 = dy(t0, x0, y0);
-///         let l2 = dy(t0 + h0, x0, y0 + h0 * l1);
-///
-///         let x_next = x0 + h0 / 2.0 * (k1 + k2);
-///         let y_next = y0 + h0 / 2.0 * (l1 + l2);
-///
-///         (x_next, y_next)
-///     },
-/// );
-/// ```
+#[doc = r"Find Optimal `H` using RK4 algorithm.
+
+# Arguments
+
+* `f` - One step difference scheme
+"]
 pub fn find_optimal_h<F>(x0: f64, y0: f64, t0: f64, h0: f64, epsilon: f64, f: F) -> f64
 where
     F: Fn(f64, f64, f64, f64) -> (f64, f64),
@@ -69,7 +40,51 @@ where
 
 pub struct Scheme(pub Vec<f64>, pub Vec<f64>);
 
+pub enum DeriveFn {
+    Dx,
+    Dy,
+}
+
 impl Scheme {
+    #[doc = r"Iterate method
+
+# Arguments
+
+* `f` - Multi step difference scheme
+"]
+    pub fn iterate<F>(&mut self, h: f64, eps: f64, f: F, level: usize)
+    where
+        F: Fn(&Vec<f64>, usize, f64, f64, f64, f64, DeriveFn) -> f64,
+    {
+        let mut t = h * 3.0;
+
+        let (mut x_s, mut y_s) = (self.0[1], self.1[1]);
+
+        let mut i = level;
+
+        let (mut x_next, mut y_next);
+
+        while (t - 1.0).abs() > eps {
+            loop {
+                x_next = f(&self.0, i, h, t, x_s, y_s, DeriveFn::Dx);
+                y_next = f(&self.1, i, h, t, x_s, y_s, DeriveFn::Dy);
+
+                if (x_next - x_s).abs() + (y_next - y_s).abs() > eps {
+                    break;
+                } else {
+                    (x_s, y_s) = (x_next, y_next);
+                }
+            }
+
+            (self.0[i + 1], self.1[i + 1]) = (x_next, y_next);
+
+            (x_s, y_s) = (x_next, y_next);
+
+            t += h;
+            i += 1;
+        }
+    }
+
     pub fn new<F>(x0: f64, y0: f64, h: f64, f: F, count: usize, num: usize) -> Scheme
     where
         F: Fn(f64, f64, f64, f64) -> (f64, f64),
@@ -94,6 +109,12 @@ impl Scheme {
         scheme
     }
 
+    #[doc = r"Newton method
+
+# Arguments
+
+* `f` - Multi step difference scheme
+"]
     pub fn newton<F>(&mut self, h: f64, eps: f64, f: F, level: usize)
     where
         F: Fn(&Vec<f64>, usize, f64, f64, f64, f64, DeriveFn) -> f64,
@@ -151,42 +172,4 @@ impl Scheme {
             i += 1;
         }
     }
-
-    pub fn iterate<F>(&mut self, h: f64, eps: f64, f: F, level: usize)
-    where
-        F: Fn(&Vec<f64>, usize, f64, f64, f64, f64, DeriveFn) -> f64,
-    {
-        let mut t = h * 3.0;
-
-        let (mut x_s, mut y_s) = (self.0[1], self.1[1]);
-
-        let mut i = level;
-
-        let (mut x_next, mut y_next);
-
-        while (t - 1.0).abs() > eps {
-            loop {
-                x_next = f(&self.0, i, h, t, x_s, y_s, DeriveFn::Dx);
-                y_next = f(&self.1, i, h, t, x_s, y_s, DeriveFn::Dy);
-
-                if (x_next - x_s).abs() + (y_next - y_s).abs() > eps {
-                    break;
-                } else {
-                    (x_s, y_s) = (x_next, y_next);
-                }
-            }
-
-            (self.0[i + 1], self.1[i + 1]) = (x_next, y_next);
-
-            (x_s, y_s) = (x_next, y_next);
-
-            t += h;
-            i += 1;
-        }
-    }
-}
-
-pub enum DeriveFn {
-    Dx,
-    Dy,
 }
