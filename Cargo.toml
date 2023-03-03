@@ -1,10 +1,10 @@
 [package]
 name = "lab1"
 version = "0.1.0"
-authors = ["Ivan Tkachuk <tkachuk.ivan.v@chnu.edu.ua>", "Viktoria Toporovska <toporovska.viktoria@chnu.edu.ua>"]
+authors = ["Ivan Tkachuk <tkachuk.ivan.v@chnu.edu.ua, seshotake@gmail.com>", "Viktoria Toporovska <toporovska.viktoria@chnu.edu.ua>"]
 edition = "2021"
 license = "MPL-2.0"
-# repository = "" TODO: Add repository
+repository = "https://github.com/seshotake/hard-lab1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
