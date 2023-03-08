@@ -5,12 +5,12 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 
 fn main() {
-    let eps = 1e-2;
-    let h0 = 1e-3;
+    let eps = 1e-3;
+    let h0 = 1e-2;
     let mut t0 = 0.0;
 
-    let x0 = 0.0;
-    let y0 = 1.0;
+    let x0 = 1.0;
+    let y0 = 0.0;
 
     let dx = |t: f64, x: f64, y: f64| 2.0 * x - y * t.powi(2) - 2.0 * (t.sin() + 1.0) * t.cos();
 
@@ -44,32 +44,30 @@ fn main() {
     };
     let optimal_h = find_optimal_h(x0, y0, t0, h0, eps, yrk21);
 
-    let num = (1.0 / optimal_h + 1.0) as usize;
+    let num = (1.0 / optimal_h) as usize + 1;
 
     let mut scheme = Scheme::new(x0, y0, optimal_h, yrk21, 3, num);
     scheme.newton(optimal_h, eps, ng4, 4);
 
     let mut i = 0;
 
-    let file = File::create("iterate.txt").expect("unable to create file");
+    let file = File::create("newton.txt").expect("unable to create file");
     let mut file = BufWriter::new(file);
 
     while (t0 - 1.0).abs() > eps {
-        let (x_t, y_t) = (t0.powi(2).exp() / 2.0, (-t0.powi(2).exp() / 2.0));
+        let (x_t, y_t) = (t0.sin() + 1.0, t0.powi(2));
 
         writeln!(file, "({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i])
             .expect("unable to write");
-
-        println!("({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i]);
 
         t0 += optimal_h;
         i += 1;
     }
 
-    scheme = Scheme::new(x0, y0, optimal_h, yrk21, 3, num);
+    scheme = Scheme::new(x0, y0, optimal_h, yrk21, 4, num);
     scheme.iterate(optimal_h, eps, ng4, 4);
 
-    let file = File::create("newton.txt").expect("unable to create file");
+    let file = File::create("iterate.txt").expect("unable to create file");
     let mut file = BufWriter::new(file);
 
     let mut i = 0;
@@ -77,12 +75,10 @@ fn main() {
     t0 = 0.0;
 
     while (t0 - 1.0).abs() > eps {
-        let (x_t, y_t) = (t0.powi(2).exp() / 2.0, (-t0.powi(2).exp() / 2.0));
+        let (x_t, y_t) = (t0.sin() + 1.0, t0.powi(2));
 
         writeln!(file, "({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i])
             .expect("unable to write");
-
-        println!("({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i]);
 
         t0 += optimal_h;
         i += 1;
