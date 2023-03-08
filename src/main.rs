@@ -1,6 +1,8 @@
 mod derive;
 
 use derive::*;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 fn main() {
     let eps = 1e-2;
@@ -49,8 +51,14 @@ fn main() {
 
     let mut i = 0;
 
+    let file = File::create("iterate.txt").expect("unable to create file");
+    let mut file = BufWriter::new(file);
+
     while (t0 - 1.0).abs() > eps {
         let (x_t, y_t) = (t0.powi(2).exp() / 2.0, (-t0.powi(2).exp() / 2.0));
+
+        writeln!(file, "({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i])
+            .expect("unable to write");
 
         println!("({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i]);
 
@@ -61,10 +69,18 @@ fn main() {
     scheme = Scheme::new(x0, y0, optimal_h, yrk21, 3, num);
     scheme.iterate(optimal_h, eps, ng4, 4);
 
+    let file = File::create("newton.txt").expect("unable to create file");
+    let mut file = BufWriter::new(file);
+
     let mut i = 0;
+
+    t0 = 0.0;
 
     while (t0 - 1.0).abs() > eps {
         let (x_t, y_t) = (t0.powi(2).exp() / 2.0, (-t0.powi(2).exp() / 2.0));
+
+        writeln!(file, "({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i])
+            .expect("unable to write");
 
         println!("({}, {}) - ({x_t}, {y_t})", scheme.0[i], scheme.1[i]);
 
