@@ -29,7 +29,7 @@ def yrk21(x0, y0, t0, h0):
     return x_next, y_next
 
 
-def h_optimal(x, y, t0, h):
+def h_optimal(x: float, y: float, t0: float, h: float):
     t = t0
     h_opt = h / 2
 
@@ -58,7 +58,7 @@ def h_optimal(x, y, t0, h):
     return h_opt
 
 
-def ng4_iterate(h, x, y, t, tarr):
+def ng4_iterate(h: float, x: list[float], y: list[float], t: float, tarr: list[float]):
     i = 3
     x_solves, y_solves = x, y
 
@@ -94,11 +94,11 @@ if __name__ == '__main__':
     eps = 0.01
     h0 = 0.01
     t0 = 0
-    t = [t0]
+    t: list[float] = [t0]
 
     h_opt = h_optimal(1, 0, t0, h0)
 
-    x_solve, y_solve = [1, 0, 0, 0], [0, 0, 0, 0]
+    x_solve, y_solve = [1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
     x_res, y_res = [1], [0]
 
     t0 += h_opt
