@@ -68,34 +68,36 @@ where
 
     pub fn iterate(&self, tarr: &mut Vec<f64>, eps: f64, count: usize) -> (Vec<f64>, Vec<f64>) {
         let (mut x, mut y) = (vec![self.x0], vec![self.y0]);
-        let mut t = self.t.0;
-        let h = self.optimal_h(eps);
+        let mut t0 = self.t.0;
+        let h_opt = self.optimal_h(eps);
 
-        for _ in 1..(count + 1) {
-            t += h;
-            let (x_res, y_res) = (self.one_step)(*x.last().unwrap(), *y.last().unwrap(), t, h);
-            tarr.push(t);
+        println!("h = {h_opt}");
+
+        for _ in 1..count {
+            t0 += h_opt;
+            let (x_res, y_res) = (self.one_step)(*x.last().unwrap(), *y.last().unwrap(), t0, h_opt);
+            tarr.push(t0);
             x.push(x_res);
             y.push(y_res);
         }
 
-        let mut i = count;
-        while t <= self.t.1 {
+        let mut i = count - 1;
+        while t0 <= self.t.1 {
             let mut x_iter = *x.last().unwrap();
             let mut y_iter = *y.last().unwrap();
 
-            let (mut x_next, mut y_next) = (self.multi_step)(&x, &y, x_iter, y_iter, i, t, h);
+            let (mut x_next, mut y_next) = (self.multi_step)(&x, &y, x_iter, y_iter, i, t0, h_opt);
 
             while (x_next - x_iter).abs() + (y_next - y_iter).abs() > eps {
                 (x_iter, y_iter) = (x_next, y_next);
 
-                (x_next, y_next) = (self.multi_step)(&x, &y, x_iter, y_iter, i, t, h);
+                (x_next, y_next) = (self.multi_step)(&x, &y, x_iter, y_iter, i, t0, h_opt);
             }
 
             x.push(x_next);
             y.push(y_next);
-            t += h;
-            tarr.push(t);
+            t0 += h_opt;
+            tarr.push(t0);
             i += 1;
         }
 

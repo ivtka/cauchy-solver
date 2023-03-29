@@ -16,7 +16,7 @@ fn main() {
         let k2 = dx(t0 + h0, x0 + h0 * k1, y0 + h0 * k1);
 
         let l1 = dy(t0, x0, y0);
-        let l2 = dy(t0 + h0, x0 + h0 * k1, y0 + h0 * l1);
+        let l2 = dy(t0 + h0, x0 + h0 * l1, y0 + h0 * l1);
 
         (x0 + h0 * (k1 + k2) / 2., y0 + h0 * (l1 + l2) / 2.)
     };
@@ -32,12 +32,16 @@ fn main() {
         (x, y)
     };
 
-    let scheme = Scheme::new(1., 0., (0., 1.), 1e-4, yrk21, ng4);
+    let (x0, y0) = (1., 0.);
+    let t = (0., 1.);
+    let h0 = 1e-2;
 
-    let eps = 1e-3;
+    let scheme = Scheme::new(x0, y0, t, h0, yrk21, ng4);
+
+    let eps = 1e-2;
     let mut tarr = vec![0.];
 
-    let (x, y) = scheme.iterate(&mut tarr, eps, 3);
+    let (x, y) = scheme.iterate(&mut tarr, eps, 4);
 
     let mut j = 0;
     let file = File::create("iterate.txt").expect("unable to create file iterate.txt");
