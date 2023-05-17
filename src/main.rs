@@ -5,9 +5,6 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 
 fn main() {
-    let dx = |t: f64, x: f64, y: f64| 2. * x - y + t.powi(2) - 2. * (t.sin() + 1.) + t.cos();
-    let dy = |t: f64, x: f64, y: f64| x + 2. * y - t.sin() - 2. * t.powi(2) + 2. * t - 1.;
-
     let real_x = |t: f64| t.sin() + 1.;
     let real_y = |t: f64| t.powi(2);
 
@@ -60,4 +57,66 @@ fn main() {
             j += 1;
         }
     }
+
+    let mut t0 = t.0;
+    let steps = ((t.1 - t.0) / h0) as usize;
+
+    let eps = 1e-2;
+
+    let file = File::create("newton.txt").expect("unable to create file newton.txt");
+    let mut file = BufWriter::new(file);
+    for i in 0..steps {
+        t0 += h0;
+        let (x0, y0) = yrk21(x0, y0, t0, h0);
+        let (x, y) = newton(x0, y0, t0, eps, steps);
+        writeln!(
+            file,
+            "({:.5}, {:.5}) - ({:.5}, {:.5})",
+            x,
+            y,
+            real_x(t0),
+            real_y(t0)
+        )
+        .expect("unable to write");
+    }
+}
+
+fn dx(t: f64, x: f64, y: f64) -> f64 {
+    2. * x - y + t.powi(2) - 2. * (t.sin() + 1.) + t.cos()
+}
+
+fn dy(t: f64, x: f64, y: f64) -> f64 {
+    x + 2. * y - t.sin() - 2. * t.powi(2) + 2. * t - 1.
+}
+
+fn newton(x0: f64, y0: f64, t0: f64, eps: f64, max_iter: usize) -> (f64, f64) {
+    let mut x = x0;
+    let mut y = y0;
+    let mut i = 0;
+
+    while i < max_iter {
+        let x_res = dx(t0, x, y);
+        let y_res = dy(t0, x, y);
+
+        let j11 = 2.0;
+        let j12 = -1.0;
+        let j21 = 1.0;
+        let j22 = 2.0;
+
+        let det = j11 * j22 - j12 * j21;
+
+        let x_next = (-j22 * x_res + j12 * y_res) / det;
+        let y_next = (j21 * x_res - j11 * y_res) / det;
+
+        x += x_next;
+        y += y_next;
+
+        i += 1;
+
+        if x_res.abs() + y_res.abs() < eps {
+            break;
+        }
+    }
+
+    (x, y)
 }
